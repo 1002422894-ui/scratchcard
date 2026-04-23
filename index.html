@@ -63,10 +63,10 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+<body class="bg-gradient-to-br from-[#ffdac1] via-[#f3c4fb] to-[#98f5e1] text-[#4a4e69]">
 
     <div class="text-center mb-8">
-        <h1 class="text-4xl font-black mb-2 drop-shadow-md">כרטיס הפתעה!</h1>
+        <h1 class="text-4xl font-black mb-2 drop-shadow-sm text-[#6b5b95]">כרטיס הפתעה!</h1>
         <p class="text-lg opacity-90">השתמש בעכבר או באצבע כדי לגרד ולגלות את התמונה</p>
     </div>
 
@@ -88,14 +88,14 @@
 
     <!-- הודעת הניצחון והקוד -->
     <div id="success-message" class="hidden mt-6 text-center animate-bounce">
-        <h2 class="text-2xl font-bold text-yellow-300 drop-shadow-md mb-2">כל הכבוד! הקוד הבא שלך הוא:</h2>
-        <div class="text-6xl font-black text-white bg-green-500 rounded-lg py-4 px-8 shadow-2xl border-4 border-white inline-block tracking-widest">247</div>
+        <h2 class="text-2xl font-bold text-[#6b5b95] drop-shadow-sm mb-2">כל הכבוד! הקוד הבא שלך הוא:</h2>
+        <div class="text-6xl font-black text-[#4a4e69] bg-[#b5ead7] rounded-lg py-4 px-8 shadow-xl border-4 border-white inline-block tracking-widest">247</div>
     </div>
 
     <!-- קובץ שמע לתרועת הניצחון -->
     <audio id="victory-sound" src="https://actions.google.com/sounds/v1/cartoon/cartoon_success_fanfare.ogg" preload="auto"></audio>
 
-    <button id="reset-btn" class="mt-8 px-6 py-3 bg-white text-purple-600 font-bold rounded-full shadow-lg hover:bg-gray-100 transition transform hover:scale-105 active:scale-95 hidden">
+    <button id="reset-btn" class="mt-8 px-6 py-3 bg-white text-[#6b5b95] font-bold rounded-full shadow-lg hover:bg-gray-50 transition transform hover:scale-105 active:scale-95 hidden">
         גרד שוב
     </button>
 
@@ -117,13 +117,13 @@
             canvas.width = container.offsetWidth;
             canvas.height = container.offsetHeight;
 
-            // מילוי הקנבס בצבע ציפוי (אפור כסוף)
-            ctx.fillStyle = '#a0aec0'; // צבע כסוף
+            // מילוי הקנבס בצבע ציפוי (ורוד פסטלי)
+            ctx.fillStyle = '#ffb7b2'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // הוספת טקסטורה או כיתוב על הציפוי
             ctx.font = 'bold 30px Heebo';
-            ctx.fillStyle = '#4a5568';
+            ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
