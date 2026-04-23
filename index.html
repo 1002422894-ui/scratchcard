@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>כרטיס גירוד</title>
+    <!-- שימוש ב-Tailwind CSS לעיצוב בסיסי של העמוד -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Heebo', sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* מכל הקלף - חייב להיות יחסי (relative) כדי שהקנבס יעלה על התמונה */
+        .scratch-card-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            user-select: none;
+            background-color: #fff;
+        }
+
+        /* התמונה המוסתרת למטה */
+        .scratch-card-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* הקנבס שאותו מגרדים - ממוקם מעל התמונה */
+        .scratch-card-container canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            cursor: crosshair;
+            transition: opacity 0.5s ease;
+        }
+
+        /* מחלקה שתעלים את הקנבס כשמסיימים לגרד */
+        .canvas-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+
+    <div class="text-center mb-8">
+        <h1 class="text-4xl font-black mb-2 drop-shadow-md">כרטיס הפתעה!</h1>
+        <p class="text-lg opacity-90">השתמש בעכבר או באצבע כדי לגרד ולגלות את התמונה</p>
+    </div>
+
+    <!-- מכל כרטיס הגירוד -->
+    <div class="scratch-card-container" id="card">
+        <!-- 
+            כאן מוגדרת התמונה. 
+            src="pic.png" - זה המקום שבו האפליקציה תחפש את התמונה בגיטהאב.
+            onerror - מנגנון גיבוי שמביא תמונה מהאינטרנט רק אם הוא לא מוצא את הקובץ המקומי.
+        -->
+        <img id="hidden-image" 
+             src="pic.png" 
+             onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1513360371669-4adf3dd7dff8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80';" 
+             alt="תמונת הפתעה"
+             crossorigin="anonymous">
+        
+        <canvas id="scratch-canvas"></canvas>
+    </div>
+
+    <!-- הודעת הניצחון והקוד -->
+    <div id="success-message" class="hidden mt-6 text-center animate-bounce">
+        <h2 class="text-2xl font-bold text-yellow-300 drop-shadow-md mb-2">כל הכבוד! הקוד הבא שלך הוא:</h2>
+        <div class="text-6xl font-black text-white bg-green-500 rounded-lg py-4 px-8 shadow-2xl border-4 border-white inline-block tracking-widest">247</div>
+    </div>
+
+    <!-- קובץ שמע לתרועת הניצחון -->
+    <audio id="victory-sound" src="https://actions.google.com/sounds/v1/cartoon/cartoon_success_fanfare.ogg" preload="auto"></audio>
+
+    <button id="reset-btn" class="mt-8 px-6 py-3 bg-white text-purple-600 font-bold rounded-full shadow-lg hover:bg-gray-100 transition transform hover:scale-105 active:scale-95 hidden">
+        גרד שוב
+    </button>
+
+    <script>
+        const canvas = document.getElementById('scratch-canvas');
+        const ctx = canvas.getContext('2d');
+        const img = document.getElementById('hidden-image');
+        const resetBtn = document.getElementById('reset-btn');
+        const container = document.getElementById('card');
+        const successMessage = document.getElementById('success-message');
+        const victorySound = document.getElementById('victory-sound');
+
+        let isDrawing = false;
+        let brushSize = 25; // גודל המברשת (הגירוד)
+
+        // פונקציה לאתחול הקנבס
+        function initCanvas() {
+            // התאמת גודל הקנבס לגודל המכל
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+
+            // מילוי הקנבס בצבע ציפוי (אפור כסוף)
+            ctx.fillStyle = '#a0aec0'; // צבע כסוף
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // הוספת טקסטורה או כיתוב על הציפוי
+            ctx.font = 'bold 30px Heebo';
+            ctx.fillStyle = '#4a5568';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // יצירת תבנית טקסט חוזרת
+            ctx.fillText('גרד אותי!', canvas.width / 2, canvas.height / 2 - 20);
+            
+            // החזרת מצב הקנבס לקדמותו
+            canvas.classList.remove('canvas-hidden');
+            resetBtn.classList.add('hidden');
+            successMessage.classList.add('hidden');
+            
+            // הגדרת שיטת החיתוך - מעכשיו כל ציור בעצם ימחק את הקיים (יעשה שקוף)
+            ctx.globalCompositeOperation = 'destination-out';
+        }
+
+        // ממתינים שהתמונה (או תמונת הגיבוי) תיטען ואז מאתחלים
+        img.onload = initCanvas;
+        
+        // אתחול ראשוני גם למקרה שהתמונה כבר בזיכרון מטמון
+        if (img.complete) {
+            initCanvas();
+        }
+
+        // פונקציה לקבלת מיקום מדויק של העכבר/מגע יחסית לקנבס
+        function getCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            let x, y;
+
+            if (e.type.includes('touch')) {
+                x = e.touches[0].clientX - rect.left;
+                y = e.touches[0].clientY - rect.top;
+            } else {
+                x = e.clientX - rect.left;
+                y = e.clientY - rect.top;
+            }
+            return { x, y };
+        }
+
+        // התחלת גירוד
+        function startScratch(e) {
+            isDrawing = true;
+            scratch(e);
+        }
+
+        // גירוד
+        function scratch(e) {
+            if (!isDrawing) return;
+            e.preventDefault(); // מניעת גלילת המסך במובייל תוך כדי גירוד
+
+            const { x, y } = getCoordinates(e);
+
+            ctx.beginPath();
+            ctx.arc(x, y, brushSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // סיום גירוד ובדיקה האם גורד מספיק
+        function stopScratch() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            checkCompletion();
+        }
+
+        // בדיקה האם המשתמש גירד יותר מ-50% מהשטח
+        function checkCompletion() {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const pixels = imageData.data;
+            let transparentPixels = 0;
+            const totalPixels = pixels.length / 4; // כל פיקסל מורכב מ-4 ערכים (R,G,B,Alpha)
+
+            // מעבר על ערוץ האלפא (שקיפות) של כל הפיקסלים
+            for (let i = 3; i < pixels.length; i += 4) {
+                if (pixels[i] === 0) {
+                    transparentPixels++;
+                }
+            }
+
+            const clearPercentage = (transparentPixels / totalPixels) * 100;
+
+            // אם יותר מ-50% נחשף, נעלים את שאר הציפוי באנימציה
+            if (clearPercentage > 50) {
+                canvas.classList.add('canvas-hidden');
+                resetBtn.classList.remove('hidden');
+                
+                // מציג את הקוד ומשמיע את תרועת הניצחון
+                if (successMessage.classList.contains('hidden')) {
+                    successMessage.classList.remove('hidden');
+                    victorySound.currentTime = 0;
+                    victorySound.play().catch(e => console.log("שגיאת הפעלת אודיו:", e));
+                }
+            }
+        }
+
+        // מאזיני אירועים - עכבר
+        canvas.addEventListener('mousedown', startScratch);
+        canvas.addEventListener('mousemove', scratch);
+        canvas.addEventListener('mouseup', stopScratch);
+        canvas.addEventListener('mouseleave', stopScratch);
+
+        // מאזיני אירועים - מגע (מובייל)
+        canvas.addEventListener('touchstart', startScratch, { passive: false });
+        canvas.addEventListener('touchmove', scratch, { passive: false });
+        canvas.addEventListener('touchend', stopScratch);
+
+        // כפתור איפוס משחק
+        resetBtn.addEventListener('click', initCanvas);
+
+    </script>
+</body>
+</html>
